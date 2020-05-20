@@ -7,4 +7,6 @@
 
 int open_client_sock(char* hostname, int port);
 
+void* client_wait_message_thread(void* vargp);
+
 #endif

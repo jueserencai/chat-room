@@ -3,11 +3,11 @@
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
 
 int open_client_sock(char* hostname, int port) {
     int client_sock;
@@ -32,3 +32,15 @@ int open_client_sock(char* hostname, int port) {
     return client_sock;
 }
 
+void* client_wait_message_thread(void* vargp) {
+    pthread_detach(pthread_self());
+
+    char buf[MAXLINE];
+    int client_sock = *(int*)vargp;
+    while (1) {
+        int n = recv(client_sock, buf, sizeof(buf), 0);
+        if (n > 0) {
+            fprintf(stdout, "receive message: \n%s\n", buf);
+        }
+    }
+}

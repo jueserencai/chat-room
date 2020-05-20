@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-void sbuf_init(sbuf_t *sp, int n) {
+void sbuf_init(Sbuf *sp, int n) {
     sp->buf = calloc(n, sizeof(int));
     sp->n = n;
     sp->front = sp->rear = 0;
@@ -12,11 +12,11 @@ void sbuf_init(sbuf_t *sp, int n) {
     sem_init(&(sp->items), 0, 0);
 }
 
-void sbuf_deinit(sbuf_t *sp) {
+void sbuf_deinit(Sbuf *sp) {
     free(sp->buf);
 }
 
-void sbuf_insert(sbuf_t *sp, int item) {
+void sbuf_insert(Sbuf *sp, int item) {
     sem_wait(&(sp->slots));
     sem_wait(&(sp->mutex));
     sp->buf[(++(sp->rear)) % (sp->n)] = item;
@@ -24,7 +24,7 @@ void sbuf_insert(sbuf_t *sp, int item) {
     sem_post(&(sp->items));
 }
 
-int sbuf_remove(sbuf_t *sp) {
+int sbuf_remove(Sbuf *sp) {
     int item;
     sem_wait(&(sp->items));
     sem_wait(&(sp->mutex));

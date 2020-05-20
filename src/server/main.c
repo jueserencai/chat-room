@@ -9,8 +9,10 @@
 #include "shared/sbuf.h"
 #include "shared/sock.h"
 #include "shared/user_info.h"
+#include "user.h"
 
-sbuf_t sbuf;
+Sbuf sbuf;                 // sock缓冲区管理
+OnlineUsers online_users;  // 在线user信息，包括 name，sock
 
 int main(int argc, char* argv[]) {
     fprintf(stdout, "server starting\n");
@@ -27,6 +29,8 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < N_THREADS; i++) {
         pthread_create(&tid, NULL, server_thread, NULL);
     }
+
+    online_users_init(&online_users, SBUF_SIZE);
 
     while (1) {
         connected_sock = accept(listen_sock, (struct sockaddr*)&client_addr, &client_len);
