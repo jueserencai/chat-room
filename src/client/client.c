@@ -66,7 +66,7 @@ void* client_wait_message_thread(void* vargp) {
                     fprintf(stdout, "from %s: %s\n", from_user, message);
                 }
             } else if (strcmp(header_content, "user_online_type") == 0) {
-                char username[USER_PASSWORD_MAX_SIZE];
+                char username[USER_NAME_MAX_SIZE];
                 char online_type[HEADER_CONTENT_SIZE];
 
                 parse_headers_user_offline(headers_buf, username, online_type);

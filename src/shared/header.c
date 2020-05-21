@@ -85,6 +85,6 @@ void parse_headers_user_offline(char* headers_buf, char* username, char* online_
     token = strtok(headers_buf, "\n");
     parse_header_line(token, header_type, username);
 
-    token = strtok(headers_buf, "\n");
+    token = strtok(NULL, "\n");
     parse_header_line(token, header_type, online_type);
 }

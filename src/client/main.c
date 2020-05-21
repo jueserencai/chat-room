@@ -30,16 +30,20 @@ int main(int argc, char* argv[]) {
 
     // 聊天好友的名字
     char to_user[USER_NAME_MAX_SIZE];
-    fprintf(stdout, "which one do you want to chat: ");
-    fgets(to_user, sizeof(to_user), stdin);
-    to_user[strlen(to_user) - 1] = '\0';
+    char message[MAXLINE / 2];
 
-    // fprintf(stdout, "to %s: ", to_user);
-    char message[500];
-    while (fgets(message, sizeof(message), stdin) != NULL) {
-        construct_headers_send_message(send_buf, my_user_name, to_user, "string", message);
-        send_sock(client_sock, send_buf, sizeof(send_buf), 0);
-        // fprintf(stdout, "to %s: ", to_user);
+    while (1) {
+        fprintf(stdout, "chat to whom: ");
+        fgets(to_user, sizeof(to_user), stdin);
+        if (strcmp(to_user, "/quit") == 0) {
+            break;
+        }
+        to_user[strlen(to_user) - 1] = '\0';
+
+        if (fgets(message, sizeof(message), stdin) != NULL) {
+            construct_headers_send_message(send_buf, my_user_name, to_user, "string", message);
+            send_sock(client_sock, send_buf, sizeof(send_buf), 0);
+        }
     }
 
     close(client_sock);
