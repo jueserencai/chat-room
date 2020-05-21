@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "client.h"
+#include "shared/header.h"
 #include "shared/sock.h"
 #include "shared/user_info.h"
 
@@ -38,7 +39,6 @@ bool sign_up() {
 
 bool sign_in(int client_sock, char* username) {
     char send_buf[MAXLINE];
-    sprintf(send_buf, "command=sign_in\n");
-    sprintf(send_buf, "%suser_name=%s\n", send_buf, username);
+    construct_headers_sign_in(send_buf, username);
     send_sock(client_sock, send_buf, sizeof(send_buf), 0);
 }

@@ -68,3 +68,4 @@ build/test/CMakeFiles/unit_test.dir/user.cpp.o
 build/src/server/CMakeFiles/server_exe.dir/user.c.o
 build/src/server/CMakeFiles/server_lib.dir/user.c.o
 build/src/shared/CMakeFiles/shared_lib.dir/utils.c.o
+build/src/shared/CMakeFiles/shared_lib.dir/header.c.o

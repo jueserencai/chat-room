@@ -9,10 +9,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "shared/header.h"
 #include "shared/sbuf.h"
 #include "shared/sock.h"
 #include "shared/user_info.h"
-#include "shared/utils.h"
 #include "user.h"
 
 extern Sbuf sbuf;
@@ -58,72 +58,52 @@ void* server_thread(void* vargp) {
 
 void serve_client(int connected_client) {
     char recv_buf[MAXLINE];
-    char send_buf[MAXLINE];
     fprintf(stdout, "serve client: sock %d\n", connected_client);
     int n = recv(connected_client, recv_buf, sizeof(recv_buf), 0);
     while (n > 0) {
         fprintf(stdout, "received message from sock %d: \n%s\n", connected_client, recv_buf);
-        handle_request(connected_client, recv_buf, send_buf);
-        send_sock(connected_client, send_buf, sizeof(send_buf), 0);
+        handle_request(connected_client, recv_buf);
         n = recv(connected_client, recv_buf, sizeof(recv_buf), 0);
     }
 }
 
-void handle_request(int connected_client, char* request_buf, char* return_buf) {
-    char* token = NULL;
-    token = strtok(request_buf, "\n");
-    char header_type[HEADER_TYPE_SIZE];
-    char header_content[HEADER_CONTENT_SIZE];
-    parse_header_line(token, header_type, header_content);
+// 处理请求的字符串 函数
+// 根据 request_buf 里面的字符串内容，处理请求。然后将回复消息放在 return_buf中。
+
+void handle_request(int connected_client, char* request_buf) {
+    // 读取第一行的 command 命令
+    int command_end = -1;
+    while (request_buf[++command_end] != '\n')
+        ;
+    request_buf[command_end] = '\0';
+    char header_type[HEADER_TYPE_SIZE];                           // header 类型，等号前面的部分
+    char header_content[HEADER_CONTENT_SIZE];                     // header 具体内容，等号后面的部分
+    parse_header_line(request_buf, header_type, header_content);  // 第一行 为请求命令的类型。根据请求命令类型分别处理。
+    request_buf += command_end + 1;                               // 从 command_end 后面开始解析headers
 
     if (strcmp(header_content, "sign_in") == 0) {
         char username[USER_NAME_MAX_SIZE];
-        token = strtok(NULL, "\n");
-        parse_header_line(token, header_type, username);
+        parse_headers_sign_in(request_buf, username);
+
         UserSock* user_sock = malloc(sizeof(UserSock));
         strcpy(user_sock->name, username);
         user_sock->sock = connected_client;
         online_users_insert(&online_users, user_sock);
     } else if (strcmp(header_content, "send_message") == 0) {
         char from_user[USER_NAME_MAX_SIZE];
-        token = strtok(NULL, "\n");
-        parse_header_line(token, header_type, from_user);
-
         char to_user[USER_NAME_MAX_SIZE];
-        token = strtok(NULL, "\n");
-        parse_header_line(token, header_type, to_user);
-
         char message_type[HEADER_CONTENT_SIZE];
-        token = strtok(NULL, "\n");
-        parse_header_line(token, header_type, message_type);
+        char message[MAXLINE];
 
-        char message_length_str[HEADER_CONTENT_SIZE];
-        token = strtok(NULL, "\n");
-        parse_header_line(token, header_type, message_length_str);
-        int message_length = atoi(message_length_str);
-
-        token = strtok(NULL, "\n");  // header头后面的空行
-        char message[message_length + 1];
-        strcpy(message, token);
-
-        switch (push_message_to_user(to_user, message_type, message, message_length)) {
-            case USER_OFFLINE:
-                sprintf(return_buf, "user %s offline\n", to_user);
-                break;
-            default:
-                sprintf(return_buf, "server push message to %s succeed\n", to_user);
-                break;
+        parse_headers_send_message(request_buf, from_user, to_user, message_type, message);
+        UserSock* user_sock = online_users_search(&online_users, to_user);
+        char send_buf[MAXLINE];
+        if (user_sock == NULL) {
+            construct_headers_user_offline(send_buf, to_user);
+            send_sock(connected_client, send_buf, sizeof(send_buf), 0);
+        } else {
+            construct_headers_send_message(send_buf, from_user, to_user, message_type, message);
+            send_sock(user_sock->sock, send_buf, sizeof(send_buf), 0);
         }
     }
-}
-
-SendMessageResultType push_message_to_user(char* username, char* message_type, char* message, size_t message_length) {
-    UserSock* user_sock = online_users_search(&online_users, username);
-    if (user_sock == NULL) {
-        return USER_OFFLINE;
-    }
-    if (strcmp(message_type, "string") == 0) {
-        send_sock(user_sock->sock, message, message_length, 0);
-    }
-    return SUCCEED;
 }

@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "client.h"
+#include "shared/header.h"
 #include "shared/sock.h"
 #include "shared/user_info.h"
 #include "user.h"
@@ -33,18 +34,12 @@ int main(int argc, char* argv[]) {
     fgets(to_user, sizeof(to_user), stdin);
     to_user[strlen(to_user) - 1] = '\0';
 
-    fprintf(stdout, "to %s: ", to_user);
+    // fprintf(stdout, "to %s: ", to_user);
     char message[500];
     while (fgets(message, sizeof(message), stdin) != NULL) {
-        sprintf(send_buf, "command=send_message\n");
-        sprintf(send_buf, "%sfrom=%s\n", send_buf, my_user_name);
-        sprintf(send_buf, "%sto=%s\n", send_buf, to_user);
-        sprintf(send_buf, "%smessage_type=string\n", send_buf);
-        sprintf(send_buf, "%smessage_length=%d\n", send_buf, (int)strlen(message));
-        sprintf(send_buf, "%s\n%s", send_buf, message);
-
+        construct_headers_send_message(send_buf, my_user_name, to_user, "string", message);
         send_sock(client_sock, send_buf, sizeof(send_buf), 0);
-        fprintf(stdout, "to %s: ", to_user);
+        // fprintf(stdout, "to %s: ", to_user);
     }
 
     close(client_sock);
