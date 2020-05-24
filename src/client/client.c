@@ -6,6 +6,7 @@
 #include <ncurses.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,8 +24,8 @@ int open_client_sock(char* hostname, int port) {
 
     // 创建客户端sock
     if ((client_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        fprintf(stdout, "error: create client socket\n");
-        exit(1);
+        ncurses_message_display("error: create client socket");
+        return -1;
     }
 
     // 设置服务器socket参数
@@ -34,8 +35,8 @@ int open_client_sock(char* hostname, int port) {
 
     // 连接服务器
     if (connect(client_sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        fprintf(stdout, "error: connect server\n");
-        exit(1);
+        ncurses_message_display("error: connect server");
+        return -1;
     }
     return client_sock;
 }
@@ -50,17 +51,10 @@ void* client_wait_message_thread(void* vargp) {
         int n = recv(client_sock, recv_buf, sizeof(recv_buf), 0);
 
         if (n > 0) {
-            // 读取第一行的 command 命令
-            int command_end = -1;
-            while (recv_buf[++command_end] != '\n')
-                ;
-            recv_buf[command_end] = '\0';
-            char header_type[HEADER_TYPE_SIZE];                        // header 类型，等号前面的部分
-            char header_content[HEADER_CONTENT_SIZE];                  // header 具体内容，等号后面的部分
-            parse_header_line(recv_buf, header_type, header_content);  // 第一行 为请求命令的类型。根据请求命令类型分别处理。
-            char* headers_buf = recv_buf + command_end + 1;
+            char command[HEADER_CONTENT_SIZE];
+            char* headers_buf = parse_header_command(recv_buf, command);
 
-            if (strcmp(header_content, "send_message") == 0) {
+            if (strcmp(command, "send_message") == 0) {
                 char from_user[USER_NAME_MAX_SIZE];
                 char to_user[USER_NAME_MAX_SIZE];
                 char message_type[HEADER_CONTENT_SIZE];
@@ -70,7 +64,7 @@ void* client_wait_message_thread(void* vargp) {
                 if (strcmp(message_type, "string") == 0) {
                     sprintf(display_buf, "from %s: %s", from_user, message);
                 }
-            } else if (strcmp(header_content, "user_online_type") == 0) {
+            } else if (strcmp(command, "user_online_type") == 0) {
                 char username[USER_NAME_MAX_SIZE];
                 char online_type[HEADER_CONTENT_SIZE];
 
@@ -97,10 +91,14 @@ void ncurses_init(NcursesType* ncurses) {
     ncurses->input_board_height = max_y - ncurses->message_display_height;
     ncurses->input_board_width = max_x;
     ncurses->input_board_win = newwin(ncurses->input_board_height, ncurses->input_board_width, ncurses->message_display_height, 0);
+
+    sem_init(&(ncurses_data.message_display_mutex), 0, 1);
+
     refresh();
 }
 
 void ncurses_message_display(char* message) {
+    sem_wait(&(ncurses_data.message_display_mutex));
     int scroll_lines = ceil(strlen(message) * 1.0 / ncurses_data.message_display_width);
     wscrl(ncurses_data.message_display_win, scroll_lines);
     mvwprintw(ncurses_data.message_display_win,
@@ -108,4 +106,10 @@ void ncurses_message_display(char* message) {
               0,
               message);
     wrefresh(ncurses_data.message_display_win);
+    sem_post(&(ncurses_data.message_display_mutex));
+}
+
+void ncurses_clear_line(WINDOW* win, int y, int x) {
+    wmove(win, y, x);
+    wclrtoeol(win);
 }

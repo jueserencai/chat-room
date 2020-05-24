@@ -16,6 +16,18 @@ void parse_header_line(char* line, char* type, char* content) {
     strcpy(content, line + equal_pos + 1);
 }
 
+// 读取header第一行的 command 命令
+// 返回第二行header的char指针
+char* parse_header_command(char* headers_buf, char* command) {
+    int command_end = -1;
+    while (headers_buf[++command_end] != '\n')
+        ;
+    headers_buf[command_end] = '\0';
+    char header_type[HEADER_TYPE_SIZE];  // header 类型，等号前面的部分
+    parse_header_line(headers_buf, header_type, command);
+    return headers_buf + command_end + 1;
+}
+
 // 当请求是 登录(sign_in) 时：
 //     header部分格式为：
 //         command=sign_in
@@ -70,7 +82,7 @@ void parse_headers_send_message(char* headers_buf, char* from, char* to, char* m
     int message_length = atoi(message_length_str);
 
     token = strtok(NULL, "\n");  // header头后面的空行
-    strncpy(message, token, message_length+1);
+    strncpy(message, token, message_length + 1);
 }
 
 void construct_headers_user_offline(char* buf, char* username) {

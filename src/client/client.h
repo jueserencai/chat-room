@@ -4,6 +4,7 @@
 #define CLIENT_H
 
 #include <ncurses.h>
+#include <semaphore.h>
 
 #define MAXLINE 1024
 
@@ -18,8 +19,11 @@ typedef struct {
     WINDOW* input_board_win;
     int input_board_height;
     int input_board_width;
+
+    sem_t message_display_mutex;
 } NcursesType;
 void ncurses_init(NcursesType* ncurses);
 void ncurses_message_display(char* message);
+void ncurses_clear_line(WINDOW* win, int y, int x);
 
 #endif

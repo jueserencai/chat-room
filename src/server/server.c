@@ -68,20 +68,13 @@ void serve_client(int connected_client) {
 }
 
 // 处理请求的字符串 函数
-// 根据 request_buf 里面的字符串内容，处理请求。然后将回复消息放在 return_buf中。
-
+// 根据 request_buf 里面的字符串内容，处理请求。
 void handle_request(int connected_client, char* request_buf) {
-    // 读取第一行的 command 命令
-    int command_end = -1;
-    while (request_buf[++command_end] != '\n')
-        ;
-    request_buf[command_end] = '\0';
-    char header_type[HEADER_TYPE_SIZE];                           // header 类型，等号前面的部分
-    char header_content[HEADER_CONTENT_SIZE];                     // header 具体内容，等号后面的部分
-    parse_header_line(request_buf, header_type, header_content);  // 第一行 为请求命令的类型。根据请求命令类型分别处理。
-    request_buf += command_end + 1;                               // 从 command_end 后面开始解析headers
+    char command[HEADER_CONTENT_SIZE];
+    request_buf = parse_header_command(request_buf, command);
+    char send_buf[MAXLINE];
 
-    if (strcmp(header_content, "sign_in") == 0) {
+    if (strcmp(command, "sign_in") == 0) {
         char username[USER_NAME_MAX_SIZE];
         parse_headers_sign_in(request_buf, username);
 
@@ -89,15 +82,14 @@ void handle_request(int connected_client, char* request_buf) {
         strcpy(user_sock->name, username);
         user_sock->sock = connected_client;
         online_users_insert(&online_users, user_sock);
-    } else if (strcmp(header_content, "send_message") == 0) {
+    } else if (strcmp(command, "send_message") == 0) {
         char from_user[USER_NAME_MAX_SIZE];
         char to_user[USER_NAME_MAX_SIZE];
         char message_type[HEADER_CONTENT_SIZE];
         char message[MAXLINE];
-
         parse_headers_send_message(request_buf, from_user, to_user, message_type, message);
+
         UserSock* user_sock = online_users_search(&online_users, to_user);
-        char send_buf[MAXLINE];
         if (user_sock == NULL) {
             construct_headers_user_offline(send_buf, to_user);
             send_sock(connected_client, send_buf, sizeof(send_buf), 0);

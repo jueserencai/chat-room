@@ -7,6 +7,8 @@
 
 void parse_header_line(char* line, char* type, char* content);
 
+char* parse_header_command(char* headers_buf, char* command);
+
 void construct_headers_sign_in(char* buf, char* username);
 void parse_headers_sign_in(char* headers_buf, char* username);
 

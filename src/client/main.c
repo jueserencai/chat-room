@@ -20,49 +20,57 @@ int main(int argc, char* argv[]) {
     ncurses_init(&ncurses_data);
     WINDOW* input_board_win = ncurses_data.input_board_win;
 
-    // 连接服务器
-    char send_buf[MAXLINE];
-    int client_sock = open_client_sock("127.0.0.1", 6666);
-    ncurses_message_display("connected to server");
-
-    // 登录用户的名字
+    int client_sock;
     char my_user_name[USER_NAME_MAX_SIZE];
-    mvwprintw(input_board_win, 0, 0, "input your name: ");
-    wgetstr(input_board_win, my_user_name);
-    sign_in(client_sock, my_user_name);
+    char command[100];
 
-    // 等待接收消息的线程
-    pthread_t tid;
-    pthread_create(&tid, NULL, client_wait_message_thread, &client_sock);
-
-    char chat_user_name[USER_NAME_MAX_SIZE];
-    char message[MAXLINE / 2];
-
-    char prompt_chat_user[] = "chat to whom: ";
-    int prompt_chat_user_len = strlen(prompt_chat_user);
-    // 清空 登录时的输入残留
-    wmove(input_board_win, 0, prompt_chat_user_len);
-    wclrtoeol(input_board_win);
     while (1) {
-        mvwprintw(input_board_win, 0, 0, prompt_chat_user);
-        wmove(input_board_win, 0, prompt_chat_user_len + 1);
-        wrefresh(input_board_win);
-        wgetstr(input_board_win, chat_user_name);
+        mvwprintw(input_board_win, 0, 0, "command: ");
+        wgetstr(input_board_win, command);
+        ncurses_clear_line(input_board_win, 0, 9 + strlen(command));  // 清空上次命令字符串的残留
 
-        mvwprintw(input_board_win, 1, 0, "to %s: ", chat_user_name);
-        // 清空好友名字后面残留的字符
-        wmove(input_board_win, 0, prompt_chat_user_len);
-        wclrtoeol(input_board_win);
-        // 清空输入的消息
-        wmove(input_board_win, 1, 5 + strlen(chat_user_name));
-        wclrtobot(input_board_win);
-        wrefresh(input_board_win);
+        if (strcmp(command, "connect") == 0) {
+            char send_sock_buf[MAXLINE];
+            client_sock = open_client_sock("127.0.0.1", 6666);
+            if (client_sock > 0) {
+                ncurses_message_display("connected to server");
+            }
+        } else if (strcmp(command, "sign_in") == 0) {
+            mvwprintw(input_board_win, 1, 0, "input your name: ");
+            wgetstr(input_board_win, my_user_name);
+            sign_in(client_sock, my_user_name);
 
-        // 接收新的消息
-        wgetstr(input_board_win, message);
+            pthread_t tid;  // 等待接收消息的线程
+            pthread_create(&tid, NULL, client_wait_message_thread, &client_sock);
+        } else if (strcmp(command, "chat") == 0) {
+            char to_user[USER_NAME_MAX_SIZE];
+            char message[MAXLINE / 2];
+            char send_sock_buf[MAXLINE];
 
-        construct_headers_send_message(send_buf, my_user_name, chat_user_name, "string", message);
-        send_sock(client_sock, send_buf, sizeof(send_buf), 0);
+            mvwprintw(input_board_win, 1, 0, "chat to: ");
+            wgetstr(input_board_win, to_user);
+            ncurses_clear_line(input_board_win, 1, 9 + strlen(to_user));
+
+            while (1) {
+                mvwprintw(input_board_win, 2, 0, "message: ");
+                wgetstr(input_board_win, message);
+                if (strcmp(message, "/quit") == 0) {
+                    ncurses_clear_line(input_board_win, 2, 14);  // 清空上次消息的残留
+                    break;
+                }
+
+                int message_len = strlen(message);
+                if (message_len > 0) {
+                    ncurses_clear_line(input_board_win, 2, 9 + message_len);  // 清空上次消息的残留
+
+                    construct_headers_send_message(send_sock_buf, my_user_name, to_user, "string", message);  // 构造header发送给服务器
+                    send_sock(client_sock, send_sock_buf, sizeof(send_sock_buf), 0);
+
+                    sprintf(send_sock_buf, "to %s: %s", to_user, message);  // 自己发送的消息也显示在接收窗口中
+                    ncurses_message_display(send_sock_buf);
+                }
+            }
+        }
     }
 
     endwin(); /* End curses mode		  */
