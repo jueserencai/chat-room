@@ -77,6 +77,7 @@ void* client_wait_message_thread(void* vargp) {
     }
 }
 
+// 初始化 ncurses 界面
 void ncurses_init(NcursesType* ncurses) {
     initscr();
     cbreak();
@@ -97,6 +98,9 @@ void ncurses_init(NcursesType* ncurses) {
     refresh();
 }
 
+// 在 消息接收窗口中显示message信息。
+// message放在窗口的最后一行，窗口向上滚动
+// 消息接收窗口 的最后一行不显示字符，和 下面的 消息输入窗口 分开
 void ncurses_message_display(char* message) {
     sem_wait(&(ncurses_data.message_display_mutex));
     int scroll_lines = ceil(strlen(message) * 1.0 / ncurses_data.message_display_width);
@@ -109,6 +113,7 @@ void ncurses_message_display(char* message) {
     sem_post(&(ncurses_data.message_display_mutex));
 }
 
+// 将window的第y行，第x列后面的字符清空
 void ncurses_clear_line(WINDOW* win, int y, int x) {
     wmove(win, y, x);
     wclrtoeol(win);

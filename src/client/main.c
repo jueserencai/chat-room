@@ -21,8 +21,9 @@ int main(int argc, char* argv[]) {
     WINDOW* input_board_win = ncurses_data.input_board_win;
 
     int client_sock;
-    char my_user_name[USER_NAME_MAX_SIZE];
+    char user_name[USER_NAME_MAX_SIZE];
     char command[100];
+    uint32_t user_id;
 
     while (1) {
         mvwprintw(input_board_win, 0, 0, "command: ");
@@ -36,9 +37,17 @@ int main(int argc, char* argv[]) {
                 ncurses_message_display("connected to server");
             }
         } else if (strcmp(command, "sign_in") == 0) {
+            char password[USER_PASSWORD_MAX_SIZE];
+            char user_id_str[11];
+            char* end;
+            mvwprintw(input_board_win, 1, 0, "input your id: ");
+            wgetstr(input_board_win, user_id_str);
+            user_id = strtoul(user_id_str, &end, 10);
             mvwprintw(input_board_win, 1, 0, "input your name: ");
-            wgetstr(input_board_win, my_user_name);
-            sign_in(client_sock, my_user_name);
+            wgetstr(input_board_win, user_name);
+            mvwprintw(input_board_win, 2, 0, "input your password: ");
+            wgetstr(input_board_win, password);
+            sign_in(client_sock, user_id, user_name, password);
 
             pthread_t tid;  // 等待接收消息的线程
             pthread_create(&tid, NULL, client_wait_message_thread, &client_sock);
@@ -63,7 +72,7 @@ int main(int argc, char* argv[]) {
                 if (message_len > 0) {
                     ncurses_clear_line(input_board_win, 2, 9 + message_len);  // 清空上次消息的残留
 
-                    construct_headers_send_message(send_sock_buf, my_user_name, to_user, "string", message);  // 构造header发送给服务器
+                    construct_headers_send_message(send_sock_buf, user_name, to_user, "string", message);  // 构造header发送给服务器
                     send_sock(client_sock, send_sock_buf, sizeof(send_sock_buf), 0);
 
                     sprintf(send_sock_buf, "to %s: %s", to_user, message);  // 自己发送的消息也显示在接收窗口中

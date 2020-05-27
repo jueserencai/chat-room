@@ -3,8 +3,8 @@
 #define CLIENT_USER_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
-bool sign_up();
-bool sign_in(int client_sock, char* username);
+void sign_in(int client_sock, uint32_t user_id, char* user_name, char* password);
 
 #endif
