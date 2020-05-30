@@ -2,6 +2,8 @@
 #ifndef SERVER_USER_H
 #define SERVER_USER_H
 
+#include <stdint.h>
+
 #include "server.h"
 #include "shared/user_info.h"
 
@@ -11,21 +13,23 @@
 //     若找到了，则通过sock发送消息。
 //     若没有找到，则回复 "用户离线" 信息给 请求发送消息 的这个用户
 
-typedef struct {
-    char name[USER_NAME_MAX_SIZE];
+typedef struct
+{
+    uint32_t id;
     int sock;
 } UserSock;
 
-typedef struct {
-    UserSock** user_socks;
+typedef struct
+{
+    UserSock **user_socks;
     int n;
     int front;
     int rear;
 } OnlineUsers;
 
-void online_users_init(OnlineUsers* online_users, int n);
-UserSock* online_users_search(OnlineUsers* online_users, char* username);
-void online_users_insert(OnlineUsers* online_users, UserSock* user_sock);
-void online_users_remove(OnlineUsers* online_users, UserSock* user_sock);  // 未实现
+void online_users_init(OnlineUsers *online_users, int n);
+UserSock *online_users_search(OnlineUsers *online_users, uint32_t user_id);
+void online_users_insert(OnlineUsers *online_users, UserSock *user_sock);
+void online_users_remove(OnlineUsers *online_users, UserSock *user_sock); // 未实现
 
 #endif

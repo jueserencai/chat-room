@@ -12,7 +12,8 @@
 #include "shared/sock.h"
 #include "shared/user_info.h"
 
-void sign_in(int client_sock, uint32_t user_id, char* user_name, char* password) {
+void sign_in(int client_sock, uint32_t user_id, char *password)
+{
     char buf[MAXLINE];
     ProtocolHead protocol_head;
     protocol_head.version = PROTOCOL_VERSION;
@@ -20,5 +21,12 @@ void sign_in(int client_sock, uint32_t user_id, char* user_name, char* password)
     protocol_head.from_id = user_id;
     protocol_head.body_type = PROTOCOL_BODY_TYPE_SIGN_IN;
     protocol_head_encode(buf, &protocol_head);
-    send_sock(client_sock, buf, sizeof(buf), 0);
+
+    ProtocolBodySignIn protocol_body;
+    protocol_body.password_len = strlen(password);
+    protocol_body.password = password;
+
+    int body_size = protocol_body_encode(buf + PROTOCOL_HEAD_SIZE, &protocol_body, PROTOCOL_BODY_TYPE_SIGN_IN);
+
+    send_sock(client_sock, buf, PROTOCOL_HEAD_SIZE + body_size, 0);
 }
