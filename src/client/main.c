@@ -37,9 +37,9 @@ int main(int argc, char *argv[])
         {
             char send_sock_buf[MAXLINE];
             client_sock = open_client_sock("127.0.0.1", 6666);
-            if (client_sock > 0)
+            if (client_sock < 0)
             {
-                ncurses_message_display("connected to server");
+                ncurses_message_display("can't connect to server");
             }
         }
         else if (strcmp(command, "sign_in") == 0)

@@ -2,10 +2,13 @@
 #ifndef SERVER_USER_H
 #define SERVER_USER_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "server.h"
 #include "shared/user_info.h"
+
+// -------------------------------------用户在线实现-----------------------------------
 
 // 当前推送消息给用户的实现方法是：
 //     用户登录后，建立一个用户登录信息，包括用户名字、建立连接的sock描述符。所有登录的用户信息放在一个循环队列里面，类似shared/sbuf包的实现。
@@ -30,6 +33,9 @@ typedef struct
 void online_users_init(OnlineUsers *online_users, int n);
 UserSock *online_users_search(OnlineUsers *online_users, uint32_t user_id);
 void online_users_insert(OnlineUsers *online_users, UserSock *user_sock);
-void online_users_remove(OnlineUsers *online_users, UserSock *user_sock); // 未实现
+void online_users_remove(OnlineUsers *online_users, UserSock *user_sock);  // 未实现
+
+// -------------------------------------用户登录等操作-----------------------------------
+bool user_sign_in(uint32_t user_id, char *password);
 
 #endif

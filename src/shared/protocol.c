@@ -41,6 +41,8 @@ void protocol_head_parse(char *buf, ProtocolHead *protocol)
     p_data += 1;
 }
 
+
+// 当前处理协议体的方式还是 逐个判断。先判断是哪个协议体，再按照对应的格式去处理。没有做一个统一的处理。后续添加协议体需要添加编码和解码的实现，比较麻烦。
 ssize_t protocol_body_encode(char *buf, void *protocol_body, ProtocolBodyType body_type)
 {
     uint8_t *p_data = buf;

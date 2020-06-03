@@ -17,4 +17,6 @@ void* server_thread(void* vargp);
 
 void handle_request(int connected_client, char* request_buf);
 
+void reply_client_string(int client_sock, uint32_t user_id, char* content);
+
 #endif
