@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include "server.h"
+#include "shared/protocol.h"
 #include "shared/user_info.h"
 
 // -------------------------------------用户在线实现-----------------------------------
@@ -37,5 +38,6 @@ void online_users_remove(OnlineUsers *online_users, UserSock *user_sock);  // �
 
 // -------------------------------------用户登录等操作-----------------------------------
 bool user_sign_in(uint32_t user_id, char *password);
+int user_sign_up(uint32_t user_id, ProtocolBodySignUp *protocol_body);
 
 #endif

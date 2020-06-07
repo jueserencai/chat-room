@@ -4,8 +4,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-void protocol_head_encode(char *buf, ProtocolHead *protocol)
-{
+void protocol_head_encode(char *buf, ProtocolHead *protocol) {
     uint8_t *p_data = buf;
     *p_data = protocol->version;
     p_data += 1;
@@ -22,8 +21,7 @@ void protocol_head_encode(char *buf, ProtocolHead *protocol)
     *p_data = protocol->body_type;
     p_data += 1;
 }
-void protocol_head_parse(char *buf, ProtocolHead *protocol)
-{
+void protocol_head_parse(char *buf, ProtocolHead *protocol) {
     uint8_t *p_data = buf;
     protocol->version = *p_data;
     p_data += 1;
@@ -41,23 +39,32 @@ void protocol_head_parse(char *buf, ProtocolHead *protocol)
     p_data += 1;
 }
 
-
 // 当前处理协议体的方式还是 逐个判断。先判断是哪个协议体，再按照对应的格式去处理。没有做一个统一的处理。后续添加协议体需要添加编码和解码的实现，比较麻烦。
-ssize_t protocol_body_encode(char *buf, void *protocol_body, ProtocolBodyType body_type)
-{
+ssize_t protocol_body_encode(char *buf, void *protocol_body, ProtocolBodyType body_type) {
     uint8_t *p_data = buf;
-    if (body_type == PROTOCOL_BODY_TYPE_SIGN_IN)
-    {
+    if (body_type == PROTOCOL_BODY_TYPE_SIGN_UP) {
+        ProtocolBodySignUp *body = (ProtocolBodySignUp *)protocol_body;
+
+        *p_data = body->username_len;
+        p_data += 1;
+        strncpy(p_data, body->username, body->username_len);
+        p_data += body->username_len;
+
+        *p_data = body->password_len;
+        p_data += 1;
+        strncpy(p_data, body->password, body->password_len);
+        p_data += body->password_len;
+    } else if (body_type == PROTOCOL_BODY_TYPE_SIGN_IN) {
         ProtocolBodySignIn *body = (ProtocolBodySignIn *)protocol_body;
+
         *p_data = body->password_len;
         p_data += 1;
 
         strncpy(p_data, body->password, body->password_len);
         p_data += body->password_len;
-    }
-    else if (body_type == PROTOCOL_BODY_TYPE_CHAT)
-    {
+    } else if (body_type == PROTOCOL_BODY_TYPE_CHAT) {
         ProtocolBodyChatMessage *body = (ProtocolBodyChatMessage *)protocol_body;
+
         *p_data = body->type;
         p_data += 1;
 
@@ -69,10 +76,9 @@ ssize_t protocol_body_encode(char *buf, void *protocol_body, ProtocolBodyType bo
 
         strncpy(p_data, body->content, body->len);
         p_data += body->len;
-    }
-    else if (body_type == PROTOCOL_BODY_TYPE_SERVER_STRING)
-    {
+    } else if (body_type == PROTOCOL_BODY_TYPE_SERVER_STRING) {
         ProtocolBodyServerString *body = (ProtocolBodyServerString *)protocol_body;
+
         *p_data = body->len;
         p_data += 1;
 
@@ -82,20 +88,31 @@ ssize_t protocol_body_encode(char *buf, void *protocol_body, ProtocolBodyType bo
     return (char *)p_data - buf;
 }
 
-void protocol_body_decode(char *buf, void *protocol_body, ProtocolBodyType body_type)
-{
+void protocol_body_decode(char *buf, void *protocol_body, ProtocolBodyType body_type) {
     uint8_t *p_data = buf;
-    if (body_type == PROTOCOL_BODY_TYPE_SIGN_IN)
-    {
-        ProtocolBodySignIn *body = (ProtocolBodySignIn *)protocol_body;
+    if (body_type == PROTOCOL_BODY_TYPE_SIGN_UP) {
+        ProtocolBodySignUp *body = (ProtocolBodySignUp *)protocol_body;
+
+        body->username_len = *p_data;
+        p_data += 1;
+        strncpy(body->username, p_data, body->username_len);
+        body->username[body->username_len] = '\0';
+        p_data += body->username_len;
+
         body->password_len = *p_data;
         p_data += 1;
-
         strncpy(body->password, p_data, body->password_len);
+        body->password[body->password_len] = '\0';
         p_data += body->password_len;
-    }
-    else if (body_type == PROTOCOL_BODY_TYPE_CHAT)
-    {
+    } else if (body_type == PROTOCOL_BODY_TYPE_SIGN_IN) {
+        ProtocolBodySignIn *body = (ProtocolBodySignIn *)protocol_body;
+
+        body->password_len = *p_data;
+        p_data += 1;
+        strncpy(body->password, p_data, body->password_len);
+        body->password[body->password_len] = '\0';
+        p_data += body->password_len;
+    } else if (body_type == PROTOCOL_BODY_TYPE_CHAT) {
         ProtocolBodyChatMessage *body = (ProtocolBodyChatMessage *)protocol_body;
 
         body->type = *p_data;
@@ -108,15 +125,16 @@ void protocol_body_decode(char *buf, void *protocol_body, ProtocolBodyType body_
         p_data += 4;
 
         strncpy(body->content, p_data, body->len);
+        body->content[body->len] = '\0';
         p_data += body->len;
-    }
-    else if (body_type == PROTOCOL_BODY_TYPE_SERVER_STRING)
-    {
+    } else if (body_type == PROTOCOL_BODY_TYPE_SERVER_STRING) {
         ProtocolBodyServerString *body = (ProtocolBodyServerString *)protocol_body;
+
         body->len = *p_data;
         p_data += 1;
 
         strncpy(body->content, p_data, body->len);
+        body->content[body->len] = '\0';
         p_data += body->len;
     }
 }

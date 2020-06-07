@@ -19,7 +19,7 @@
 
 extern NcursesType ncurses_data;
 
-int open_client_sock(char *hostname, int port)
+int open_client_sock(const char *hostname, int port)
 {
     int client_sock;
     struct sockaddr_in server_addr;
@@ -93,21 +93,21 @@ void *client_wait_message_thread(void *vargp)
 }
 
 // 初始化 ncurses 界面
-void ncurses_init(NcursesType *ncurses)
+void ncurses_init()
 {
     initscr();
     cbreak();
     int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x);
 
-    ncurses->message_display_height = max_y / 10 * 6;
-    ncurses->message_display_width = max_x;
-    ncurses->message_display_win = newwin(ncurses->message_display_height, ncurses->message_display_width, 0, 0);
-    scrollok(ncurses->message_display_win, TRUE);
+    ncurses_data.message_display_height = max_y / 10 * 6;
+    ncurses_data.message_display_width = max_x;
+    ncurses_data.message_display_win = newwin(ncurses_data.message_display_height, ncurses_data.message_display_width, 0, 0);
+    scrollok(ncurses_data.message_display_win, TRUE);
 
-    ncurses->input_board_height = max_y - ncurses->message_display_height;
-    ncurses->input_board_width = max_x;
-    ncurses->input_board_win = newwin(ncurses->input_board_height, ncurses->input_board_width, ncurses->message_display_height, 0);
+    ncurses_data.input_board_height = max_y - ncurses_data.message_display_height;
+    ncurses_data.input_board_width = max_x;
+    ncurses_data.input_board_win = newwin(ncurses_data.input_board_height, ncurses_data.input_board_width, ncurses_data.message_display_height, 0);
 
     sem_init(&(ncurses_data.message_display_mutex), 0, 1);
 

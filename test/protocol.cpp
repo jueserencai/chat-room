@@ -7,7 +7,7 @@ extern "C" {
 TEST(protocol, head) {
     char buf[1000];
     ProtocolHead source_protocol;
-    source_protocol.version = PROTOCOL_VERSION;
+    source_protocol.version = CHAT_PROTOCOL_VERSION;
     source_protocol.code = PROTOCOL_CODE_SIGN_IN;
     source_protocol.from_id = 100;
     source_protocol.to_id = 200;

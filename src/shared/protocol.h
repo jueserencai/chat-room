@@ -17,7 +17,7 @@ typedef struct
 
 #define PROTOCOL_HEAD_SIZE 11
 
-#define PROTOCOL_VERSION 1
+#define CHAT_PROTOCOL_VERSION 1
 
 // code字段根据以下值，进行不同的处理
 // 私聊       0x01
@@ -54,6 +54,7 @@ typedef enum
 {
     PROTOCOL_BODY_TYPE_CHAT = 1,
     PROTOCOL_BODY_TYPE_SIGN_IN = 6,
+    PROTOCOL_BODY_TYPE_SIGN_UP = 14,
 
     PROTOCOL_BODY_TYPE_SERVER_STRING = 100,
 
@@ -61,6 +62,16 @@ typedef enum
 
 ssize_t protocol_body_encode(char *buf, void *protocol_body, ProtocolBodyType body_type);
 void protocol_body_decode(char *buf, void *protocol_body, ProtocolBodyType body_type);
+
+// 协议体中 注册 的内容格式
+typedef struct
+{
+    uint8_t username_len;
+    char *username;
+    uint8_t password_len;
+    char *password;
+} ProtocolBodySignUp;
+
 
 // 协议体中 登录 的内容格式
 typedef struct

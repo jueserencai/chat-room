@@ -14,6 +14,7 @@
 #include "shared/sbuf.h"
 #include "shared/sock.h"
 #include "shared/user_info.h"
+#include "shared/utils.h"
 #include "user.h"
 
 extern Sbuf G_sbuf;
@@ -79,7 +80,28 @@ void handle_request(int connected_client, char *request_buf) {
 
     char *body_buf = request_buf + PROTOCOL_HEAD_SIZE;
 
-    if (protocol_head.code == PROTOCOL_CODE_SIGN_IN) {
+    if (protocol_head.code == PROTOCOL_CODE_SIGN_UP) {
+        char username[USER_NAME_MAX_SIZE];
+        char password[USER_PASSWORD_MAX_SIZE];
+        ProtocolBodySignUp protocol_body;
+        protocol_body.username = username;
+        protocol_body.password = password;
+
+        // 解析协议体
+        protocol_body_decode(body_buf, &protocol_body, PROTOCOL_BODY_TYPE_SIGN_UP);
+        debug_print("%s %s\n", protocol_body.username, protocol_body.password);
+
+        char content[200];
+        int ret_code = user_sign_up(protocol_head.from_id, &protocol_body);
+        if (ret_code == 0) {  // 注册成功
+            sprintf(content, "sign up successed");
+        } else {  // 注册失败
+            sprintf(content, "sign up failed");
+        }
+        reply_client_string(connected_client, protocol_head.from_id, content);
+    } else
+
+        if (protocol_head.code == PROTOCOL_CODE_SIGN_IN) {
         char password[USER_PASSWORD_MAX_SIZE];
         ProtocolBodySignIn protocol_body;
         protocol_body.password = password;
@@ -117,7 +139,7 @@ void reply_client_string(int client_sock, uint32_t user_id, char *content) {
     char send_buf[MAXLINE];
 
     ProtocolHead server_string_head;
-    server_string_head.version = PROTOCOL_VERSION;
+    server_string_head.version = CHAT_PROTOCOL_VERSION;
     server_string_head.code = PROTOCOL_CODE_SERVER_STRING;
     server_string_head.from_id = user_id;
     server_string_head.body_type = PROTOCOL_BODY_TYPE_SERVER_STRING;

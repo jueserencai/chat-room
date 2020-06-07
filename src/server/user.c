@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "shared/protocol.h"
+#include "shared/utils.h"
 #include "sql.h"
 
 extern MYSQL G_mysql_connection;
@@ -44,7 +46,7 @@ bool user_sign_in(uint32_t user_id, char *password) {
     sprintf(stmt_str, "select * from user where user_id=%d and user_password=\"%s\"", user_id, password);  // 从数据库中读取user_id对应的密码
     res = mysql_query(&G_mysql_connection, stmt_str);
     if (res != 0) {
-        fprintf(stderr, "error: server, user_sign_in, mysql qeury error code: %d\n", res);
+        debug_print("error: server, user_sign_in, mysql qeury error code: %d\n", res);
         return false;
     }
     result = mysql_store_result(&G_mysql_connection);
@@ -52,4 +54,19 @@ bool user_sign_in(uint32_t user_id, char *password) {
 
     mysql_free_result(result);
     return num_rows == 1;
+}
+
+int user_sign_up(uint32_t user_id, ProtocolBodySignUp *protocol_body) {
+    int res;
+    char stmt_str[SQL_STMT_STR_LEN];
+
+    // 直接插入数据，通过返回值判断成功与否。
+    sprintf(stmt_str, "insert into user (user_id, user_name, user_password) values (%d, \"%s\", \"%s\")", user_id, protocol_body->username, protocol_body->password);
+    debug_print("%s\n", stmt_str);
+    res = mysql_query(&G_mysql_connection, stmt_str);
+    if (res != 0) {
+        debug_print("error: server, user_sign_up, mysql qeury error code: %d\n", res);
+        return 1;
+    }
+    return 0;
 }

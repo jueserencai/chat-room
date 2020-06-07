@@ -12,11 +12,10 @@
 #include "shared/sock.h"
 #include "shared/user_info.h"
 
-void sign_in(int client_sock, uint32_t user_id, char *password)
-{
+void sign_in(int client_sock, uint32_t user_id, char* password) {
     char buf[MAXLINE];
     ProtocolHead protocol_head;
-    protocol_head.version = PROTOCOL_VERSION;
+    protocol_head.version = CHAT_PROTOCOL_VERSION;
     protocol_head.code = PROTOCOL_CODE_SIGN_IN;
     protocol_head.from_id = user_id;
     protocol_head.body_type = PROTOCOL_BODY_TYPE_SIGN_IN;
@@ -27,6 +26,26 @@ void sign_in(int client_sock, uint32_t user_id, char *password)
     protocol_body.password = password;
 
     int body_size = protocol_body_encode(buf + PROTOCOL_HEAD_SIZE, &protocol_body, PROTOCOL_BODY_TYPE_SIGN_IN);
+
+    send_sock(client_sock, buf, PROTOCOL_HEAD_SIZE + body_size, 0);
+}
+
+void sign_up(int client_sock, uint32_t user_id, char* username, char* password) {
+    char buf[MAXLINE];
+    ProtocolHead protocol_head;
+    protocol_head.version = CHAT_PROTOCOL_VERSION;
+    protocol_head.code = PROTOCOL_CODE_SIGN_UP;
+    protocol_head.from_id = user_id;
+    protocol_head.body_type = PROTOCOL_BODY_TYPE_SIGN_UP;
+    protocol_head_encode(buf, &protocol_head);
+
+    ProtocolBodySignUp protocol_body;
+    protocol_body.username_len = strlen(username);
+    protocol_body.username = username;
+    protocol_body.password_len = strlen(password);
+    protocol_body.password = password;
+
+    int body_size = protocol_body_encode(buf + PROTOCOL_HEAD_SIZE, &protocol_body, PROTOCOL_BODY_TYPE_SIGN_UP);
 
     send_sock(client_sock, buf, PROTOCOL_HEAD_SIZE + body_size, 0);
 }
